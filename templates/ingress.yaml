@@ -1,25 +1,30 @@
-{{ if $.Values.haproxy.ingressEnable -}}
-apiVersion: networking.k8s.io/v1beta1
+{{ if $.Values.ingress.enable -}}
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    kubernetes.io/ingress.class: nginx
+    {{ if and $.Values.ingress.tls.enable $.Values.ingress.tls.clusterIssuer -}}
+    cert-manager.io/cluster-issuer: {{ $.Values.ingress.tls.clusterIssuer }}
+    {{ end -}}
+    kubernetes.io/ingress.class: {{ $.Values.ingress.class }}
   name: {{ $.Values.haproxy.name }}-ingress
   namespace: {{ $.Values.namespace }}
 spec:
   rules:
-  - host: {{ $.Values.haproxy.ingress.host }}
+  - host: {{ $.Values.ingress.host }}
     http:
       paths:
       - backend:
-          serviceName: haproxy
-          servicePort: 80
+          service:
+            name: {{ $.Values.haproxy.name }}
+            port: 
+              number: 80
+        pathType: Prefix
         path: /
-  {{ if $.Values.haproxy.ingress.tlsEnable }}
+  {{ if $.Values.ingress.tls.enable -}}
   tls:
   - hosts:
-    - {{ $.Values.haproxy.ingress.host }}
+    - {{ $.Values.ingress.host }}
     secretName: jitsi-tls
-  {{ end }}
-{{ end }}
+  {{ end -}}
+{{ end -}}
